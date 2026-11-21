@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сухо мини-приложение</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* VOICE everyday product: a real shipped Telegram mini app for a dry cleaner
+   IDEA the paper claim ticket and garment tag of a dry cleaner
+   PICTURE a hanging shirt with a Сухо tag on home; the order ticket with perforation on status
+   COLOUR white app, ultramarine #3346ff fields, pale periwinkle, tangerine accent
+   TYPE Unbounded for numbers and titles + Manrope text
+   LAYOUT desktop: short pitch left, phone frame right; phone: the app full screen */
+:root{color-scheme:light dark;--bg:light-dark(#eceefe,#090c22);--app:light-dark(#ffffff,#11153a);--ink:light-dark(#0f1330,#eef0ff);--mute:light-dark(#5a5f86,#a6abd8);--blue:light-dark(#3346ff,#5f6dff);--soft:light-dark(#eef0ff,#1b2152);--line:light-dark(#e1e4f6,#283068);--acc:#ff7a3d;--ok:light-dark(#128a52,#3fd48a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Manrope,system-ui,sans-serif;overflow-x:clip}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.wrap{min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:56px;align-items:center;max-width:1100px;margin:0 auto;padding:32px max(5vw,16px)}
+.pitch h1{font:600 clamp(32px,4vw,46px)/1.05 Unbounded,sans-serif;letter-spacing:-.02em;margin:0 0 18px;text-wrap:balance}
+.pitch p{color:var(--mute);max-width:34em;margin:0 0 22px}
+.pitch ul{list-style:none;padding:0;margin:0 0 24px;display:grid;gap:12px}
+.pitch li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.pitch li b{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--blue);color:#fff;font-size:14px}
+.pitch small{color:var(--mute);font-size:13px}
+.phone{width:390px;height:800px;background:var(--app);border-radius:44px;box-shadow:0 0 0 10px light-dark(#14183d,#262c63),0 30px 60px -20px rgba(20,24,80,.45);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.top{display:flex;align-items:center;gap:10px;padding:18px 16px 12px;border-bottom:1px solid var(--line)}
+.logo{font:600 22px Unbounded,sans-serif;letter-spacing:-.03em;color:var(--blue)}
+.seg{margin-left:auto;display:flex;background:var(--soft);border-radius:12px;padding:3px}
+.seg button{padding:7px 11px;border-radius:9px;font-size:13px;font-weight:700;color:var(--mute);min-height:34px}
+.seg button[aria-pressed=true]{background:var(--app);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.view{flex:1;overflow-y:auto;padding:16px 16px 24px}
+.tabbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);padding:6px 6px 10px;background:var(--app)}
+.tabbar button{display:grid;justify-items:center;gap:2px;font-size:12px;font-weight:700;color:var(--mute);padding:6px 0;min-height:48px;position:relative}
+.tabbar button[aria-current=page]{color:var(--blue)}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.badge{position:absolute;top:2px;left:calc(50% + 6px);background:var(--acc);color:#fff;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px}
+h2{font:600 22px/1.15 Unbounded,sans-serif;letter-spacing:-.02em;margin:4px 0 14px}
+h3{font-size:15px;margin:20px 0 10px}
+.hero{background:var(--blue);color:#fff;border-radius:24px;display:grid;grid-template-columns:1fr 128px;overflow:hidden}
+.hero div{padding:18px 0 18px 18px}
+.hero b{font:600 20px/1.15 Unbounded,sans-serif;display:block;margin-bottom:8px}
+.hero p{margin:0 0 14px;font-size:14px;opacity:.85}
+.hero svg{width:128px;height:100%;min-height:170px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:14px;font-weight:800;background:var(--blue);color:#fff;width:100%}
+.btn.w{background:#fff;color:#3346ff;width:auto}
+.btn.ghost{background:var(--soft);color:var(--blue)}
+.card{border:1px solid var(--line);border-radius:18px;padding:14px;background:var(--app)}
+.row{display:flex;align-items:center;gap:10px}
+.row .grow{flex:1}
+.mute{color:var(--mute);font-size:14px}
+.num{white-space:nowrap;font-weight:800}
+.bar{height:8px;border-radius:4px;background:var(--soft);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:4px;transition:width .4s}
+.quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.quick button{background:var(--soft);border-radius:16px;padding:14px;text-align:left;font-weight:800;min-height:72px}
+.quick span{display:block;font-weight:600;font-size:13px;color:var(--mute)}
+.promo{background:color-mix(in srgb,var(--acc) 16%,var(--app));border-radius:18px;padding:14px;margin-top:12px}
+.promo b{color:var(--acc)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chip{flex:none;padding:9px 14px;border-radius:12px;background:var(--soft);font-weight:700;font-size:14px;min-height:40px;white-space:nowrap}
+.chip[aria-pressed=true]{background:var(--blue);color:#fff}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.item s{color:var(--mute);font-size:13px;margin-left:6px}
+.step{display:flex;align-items:center;gap:4px}
+.step button{width:36px;height:36px;border-radius:11px;background:var(--soft);font-size:20px;font-weight:800;color:var(--blue)}
+.step output{width:24px;text-align:center;font-weight:800}
+.tog{display:flex;align-items:center;gap:12px;padding:10px 0;min-height:48px}
+.tog input{width:22px;height:22px;accent-color:var(--blue);flex:none}
+.field{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--app);font-size:16px}
+.sum{background:var(--soft);border-radius:18px;padding:14px;margin-top:16px}
+.sum .row{padding:3px 0;font-size:15px}
+.sum .tot{font:600 20px Unbounded,sans-serif;padding-top:8px}
+.sticky{position:sticky;bottom:-24px;background:linear-gradient(transparent,var(--app) 30%);padding:18px 0 8px;margin-top:6px}
+.ticket{background:var(--blue);color:#fff;border-radius:22px;padding:18px;position:relative}
+.ticket .no{font:600 34px/1 Unbounded,sans-serif;letter-spacing:-.03em}
+.ticket .perf{border-top:2px dashed rgba(255,255,255,.45);margin:14px -18px;position:relative}
+.ticket .perf::before,.ticket .perf::after{content:"";position:absolute;top:-11px;width:20px;height:20px;border-radius:50%;background:var(--app)}
+.ticket .perf::before{left:-10px}.ticket .perf::after{right:-10px}
+.ticket .mute{color:rgba(255,255,255,.78)}
+.tl{list-style:none;padding:0;margin:16px 0 0}
+.tl li{display:grid;grid-template-columns:22px 1fr auto;gap:12px;padding-bottom:16px;position:relative}
+.tl li::before{content:"";position:absolute;left:10px;top:20px;bottom:0;width:2px;background:var(--line)}
+.tl li:last-child::before{display:none}
+.tl i{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--app);z-index:1}
+.tl .done i{background:var(--blue);border-color:var(--blue)}
+.tl .now i{border-color:var(--acc);background:var(--acc);box-shadow:0 0 0 5px color-mix(in srgb,var(--acc) 25%,transparent)}
+.tl .now b{color:var(--acc)}
+.tl li:not(.done):not(.now){color:var(--mute)}
+.loy{background:linear-gradient(135deg,#3346ff,#1b24a8);color:#fff;border-radius:24px;padding:20px;display:grid;grid-template-columns:1fr 112px;gap:12px;align-items:center}
+.loy .big{font:600 40px/1 Unbounded,sans-serif}
+.loy svg{width:112px;height:112px;background:#fff;border-radius:14px;padding:8px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stats div{background:var(--soft);border-radius:16px;padding:12px}
+.stats b{display:block;font:600 19px Unbounded,sans-serif;white-space:nowrap}
+.stats span{font-size:13px;color:var(--mute)}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;align-items:end;height:110px;margin-top:8px}
+.wk div{display:grid;align-content:end;justify-items:center;height:100%;font-size:12px;color:var(--mute);gap:4px}
+.wk i{display:block;width:100%;background:var(--soft);border-radius:6px 6px 3px 3px}
+.wk .today i{background:var(--blue)}
+.ord{display:grid;gap:8px;padding:14px 0;border-bottom:1px solid var(--line)}
+.pill{display:inline-block;padding:3px 10px;border-radius:8px;font-size:13px;font-weight:800;background:var(--soft);color:var(--blue);white-space:nowrap}
+.pill.hot{background:color-mix(in srgb,var(--acc) 18%,var(--app));color:var(--acc)}
+.pill.ok{color:var(--ok)}
+.toast{position:absolute;left:12px;right:12px;bottom:84px;background:var(--ink);color:var(--app);padding:12px 14px;border-radius:14px;font-size:14px;font-weight:600;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none;z-index:5}
+.toast.on{transform:none;opacity:1}
+.note{font-size:13px;color:var(--mute);text-align:center;margin-top:18px}
+@media(max-width:860px){.wrap{display:block;padding:0;min-height:0;height:100%}.pitch{display:none}.phone{width:100%;height:100%;border-radius:0;box-shadow:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="pitch">
+    <h1>Химчистка, которая живёт в Telegram</h1>
+    <p>Клиент открывает бота и за минуту сдаёт вещи: выбирает их, время приезда курьера и сразу видит цену. Владелец получает заказ и одним нажатием меняет статус, а клиенту тут же приходит уведомление.</p>
+    <ul>
+      <li><b>1</b><span>Заказ и курьер без звонков и переписки</span></li>
+      <li><b>2</b><span>Статус каждой вещи: принят, в чистке, готов</span></li>
+      <li><b>3</b><span>Бонусная карта с кешбэком, чтобы клиенты возвращались</span></li>
+      <li><b>4</b><span>Панель владельца: заказы, выручка, неделя</span></li>
+    </ul>
+    <small>Демо-версия. Цены, заказы и клиенты примерные. Попробуйте переключатель «Владелец» вверху.</small>
+  </section>
+  <div class="phone">
+    <header class="top">
+      <span class="logo">Сухо</span>
+      <div class="seg" role="group" aria-label="Режим">
+        <button id="mClient" aria-pressed="true">Клиент</button>
+        <button id="mOwner" aria-pressed="false">Владелец</button>
+      </div>
+    </header>
+    <main class="view" id="view"></main>
+    <nav class="tabbar" id="tabs">
+      <button data-v="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Главная</button>
+      <button data-v="order"><svg viewBox="0 0 24 24"><path d="M12 3a2 2 0 0 1 2 2c0 1.2-2 1.6-2 3M12 8l9 7.5a1 1 0 0 1-.6 1.8H3.6a1 1 0 0 1-.6-1.8z"/></svg>Заказ<span class="badge" id="cnt" hidden></span></button>
+      <button data-v="status"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Статус</button>
+      <button data-v="bonus"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M7 15h4"/></svg>Бонусы</button>
+    </nav>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+</div>
+<script>
+{
+const tg = window.Telegram && window.Telegram.WebApp;
+const inTg = !!(tg && tg.initData);
+try { if (tg) { tg.ready(); tg.expand(); } } catch (e) {}
+// Данные клиента, которые бот кладёт в ссылку: бонусы, адрес, последние заказы
+let P = null;
+try {
+  const q = new URLSearchParams(location.search).get('d');
+  if (q) {
+    let b = q.replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    P = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b), ch => ch.charCodeAt(0))));
+  }
+} catch (e) { P = null; }
+const haptic = () => { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred('light'); } catch (e) {} };
+const rub = n => Math.round(n).toLocaleString('ru-RU') + ' ₽';
+const $ = id => document.getElementById(id);
+
+const ITEMS = [
+  {id:'coat',c:'Верхняя одежда',n:'Пальто',p:1890},
+  {id:'down',c:'Верхняя одежда',n:'Пуховик',p:2190,promo:1},
+  {id:'jack',c:'Верхняя одежда',n:'Куртка',p:1490},
+  {id:'suit',c:'Костюмы',n:'Костюм-двойка',p:1690},
+  {id:'shirt',c:'Костюмы',n:'Рубашка',p:390},
+  {id:'trou',c:'Костюмы',n:'Брюки',p:690},
+  {id:'dress',c:'Платья',n:'Платье',p:1290},
+  {id:'eve',c:'Платья',n:'Вечернее платье',p:2490},
+  {id:'snk',c:'Обувь',n:'Кроссовки',p:1190},
+  {id:'boot',c:'Обувь',n:'Сапоги, замша',p:1790},
+  {id:'blnk',c:'Для дома',n:'Одеяло',p:1590},
+  {id:'curt',c:'Для дома',n:'Шторы, за 1 м²',p:290}
+];
+const CATS = [...new Set(ITEMS.map(i => i.c))];
+const STAGES = ['Принят','Курьер забрал','В чистке','Готов','Везём к вам','Выдан'];
+const SLOTS = ['10:00–13:00','13:00–16:00','16:00–19:00','19:00–22:00'];
+const price = i => i.promo ? Math.round(i.p * .85 / 10) * 10 : i.p;
+const days = [...Array(5)].map((_, k) => { const d = new Date(); d.setDate(d.getDate() + k + 1); return d; });
+const dayLabel = d => d.toLocaleDateString('ru-RU', {weekday:'short', day:'numeric', month:'short'});
+
+const S = {
+  cart:{}, cat:CATS[0], urgent:false, stain:false, mode:'courier', day:0, slot:SLOTS[0],
+  addr:'ул. Летняя, 14, кв. 52', useBonus:false, bonus:640, spent:18400, owner:false, my:2417,
+  orders:[
+    {id:2415,who:'Анна К.',items:'Пуховик, сапоги',sum:3650,st:3},
+    {id:2416,who:'Игорь М.',items:'Костюм-двойка, рубашка ×2',sum:2470,st:1},
+    {id:2417,who:'Вы',items:'Пальто, рубашка ×3',sum:3060,st:2,when:'вчера, курьер'},
+    {id:2418,who:'Мария С.',items:'Вечернее платье',sum:2490,st:0}
+  ],
+  history:[{id:2380,items:'Пуховик',sum:2190,date:'12 октября'},{id:2302,items:'Шторы, 6 м²',sum:1740,date:'3 сентября'}]
+};
+
+const cartList = () => ITEMS.filter(i => S.cart[i.id]);
+const count = () => Object.values(S.cart).reduce((a, b) => a + b, 0);
+function calc() {
+  const sub = cartList().reduce((a, i) => a + price(i) * S.cart[i.id], 0);
+  const urg = S.urgent ? sub * .5 : 0;
+  const stain = S.stain && sub ? 250 : 0;
+  const del = S.mode === 'courier' && sub && sub < 2000 ? 290 : 0;
+  const max = Math.min(S.bonus, Math.floor((sub + urg + stain) * .3));
+  const use = S.useBonus ? max : 0;
+  return {sub, urg, stain, del, max, use, total: sub + urg + stain + del - use};
+}
+let tt;
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 2600); }
+
+const hanger = `<svg viewBox="0 0 128 180" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <path d="M64 18a9 9 0 1 1 9 9c-5 0-9 3-9 8v6" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <path d="M64 41L14 66h100z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M30 64l18-8h32l18 8 18 26-16 10-8-12v92H36V88l-8 12-16-10z" fill="#fff"/>
+  <path d="M80 56l18 8 18 26-16 10-8-12v92H74z" fill="#d9ddff"/>
+  <path d="M52 56l12 16 12-16" fill="none" stroke="#3346ff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M64 72v108" stroke="#c4c9f5" stroke-width="2" stroke-dasharray="2 9"/>
+  <path d="M86 98l22 10-6 28-24-8z" fill="#ff7a3d"/>
+  <circle cx="90" cy="104" r="3" fill="#fff"/>
+  <text x="93" y="124" font-family="Unbounded" font-size="10" font-weight="600" fill="#fff" transform="rotate(20 93 124)">Сухо</text>
+</svg>`;
+
+function home() {
+  const o = S.orders.find(x => x.id === S.my);
+  return `<div class="hero"><div><b>Почистим и привезём за 48 часов</b><p>Курьер бесплатно от 2000 ₽</p><button class="btn w" data-go="order">Сдать вещи</button></div>${hanger}</div>
+  ${o ? `<h3>Ваш заказ</h3><button class="card" style="width:100%;text-align:left" data-go="status">
+    <div class="row"><span class="grow"><b>№${o.id}</b> · ${o.items}</span><span class="pill ${o.st >= 3 ? 'ok' : 'hot'}">${STAGES[o.st]}</span></div>
+    <div class="bar"><i style="width:${(o.st + 1) / STAGES.length * 100}%"></i></div></button>` : ''}
+  <div class="quick">
+    <button data-go="order">Вызвать курьера<span>Завтра с 10:00</span></button>
+    <button data-go="bonus">${S.bonus} бонусов<span>1 бонус = 1 ₽</span></button>
+  </div>
+  <div class="promo"><b>−15% на пуховики</b> до 30 ноября. Скидка уже в прайсе.</div>
+  <h3>Как это работает</h3>
+  <div class="card mute">Выберите вещи и время. Курьер заберёт их, а статус заказа будет приходить сюда же, в Telegram. Оплатить можно после чистки, при получении.</div>`;
+}
+
+function order() {
+  const c = calc();
+  const list = ITEMS.filter(i => i.c === S.cat).map(i => `<div class="item"><div><b>${i.n}</b><br><span class="num">${rub(price(i))}</span>${i.promo ? `<s>${rub(i.p)}</s>` : ''}</div>
+    <div class="step"><button data-dec="${i.id}" aria-label="Убрать ${i.n}">−</button><output>${S.cart[i.id] || 0}</output><button data-inc="${i.id}" aria-label="Добавить ${i.n}">+</button></div></div>`).join('');
+  return `<h2>Новый заказ</h2>
+  <div class="chips">${CATS.map(k => `<button class="chip" data-cat="${k}" aria-pressed="${k === S.cat}">${k}</button>`).join('')}</div>
+  ${list}
+  <h3>Услуги</h3>
+  <label class="tog"><input type="checkbox" id="urg" ${S.urgent ? 'checked' : ''}><span class="grow">Срочно, за 24 часа<br><span class="mute">+50% к стоимости</span></span></label>
+  <label class="tog"><input type="checkbox" id="stn" ${S.stain ? 'checked' : ''}><span class="grow">Сложные пятна<br><span class="mute">+250 ₽ за заказ</span></span></label>
+  <h3>Как передать вещи</h3>
+  <div class="chips"><button class="chip" data-mode="courier" aria-pressed="${S.mode === 'courier'}">Курьер</button><button class="chip" data-mode="self" aria-pressed="${S.mode === 'self'}">Сам привезу в пункт</button></div>
+  ${S.mode === 'courier' ? `<h3>Когда забрать</h3>
+  <div class="chips">${days.map((d, k) => `<button class="chip" data-day="${k}" aria-pressed="${k === S.day}">${dayLabel(d)}</button>`).join('')}</div>
+  <div class="chips" style="margin-top:8px">${SLOTS.map(s => `<button class="chip" data-slot="${s}" aria-pressed="${s === S.slot}">${s}</button>`).join('')}</div>
+  <h3>Адрес</h3><input class="field" id="addr" value="${S.addr.replace(/"/g, '&quot;')}" placeholder="Улица, дом, квартира" aria-label="Адрес">` : `<p class="mute">Пункт приёма: пр. Мира, 21, ежедневно 9:00–21:00</p>`}
+  <div class="sum">
+    <div class="row"><span class="grow">Вещи, ${count()} шт.</span><span class="num">${rub(c.sub)}</span></div>
+    ${c.urg ? `<div class="row"><span class="grow">Срочность</span><span class="num">${rub(c.urg)}</span></div>` : ''}
+    ${c.stain ? `<div class="row"><span class="grow">Пятновыводка</span><span class="num">${rub(c.stain)}</span></div>` : ''}
+    ${S.mode === 'courier' && c.sub ? `<div class="row"><span class="grow">Курьер</span><span class="num">${c.del ? rub(c.del) : 'бесплатно'}</span></div>` : ''}
+    ${c.max ? `<label class="tog" style="padding:4px 0;min-height:40px"><input type="checkbox" id="ub" ${S.useBonus ? 'checked' : ''}><span class="grow">Списать ${c.max} бонусов</span><span class="num">−${rub(c.max)}</span></label>` : ''}
+    <div class="row tot"><span class="grow">Итого</span><span class="num">${rub(c.total)}</span></div>
+  </div>
+  <div class="sticky"><button class="btn" id="submit">${c.sub ? 'Оформить за ' + rub(c.total) : 'Добавьте вещи'}</button></div>`;
+}
+
+function status() {
+  const o = S.orders.find(x => x.id === S.my);
+  if (!o) return `<h2>Статус заказа</h2><div class="card mute">Сейчас нет заказов в работе.</div>
+  <div style="margin-top:12px"><button class="btn" data-go="order">Сдать вещи</button></div>
+  ${S.history.length ? '<h3>Прошлые заказы</h3>' + S.history.map(h => `<div class="item"><div><b>№${h.id}</b> · ${h.items}<br><span class="mute">${h.date}</span></div><div class="num">${rub(h.sum)}</div></div>`).join('') : ''}`;
+  const tl = STAGES.map((s, k) => `<li class="${k < o.st ? 'done' : k === o.st ? 'now' : ''}"><i></i><b>${s}</b><span class="mute">${k < o.st ? 'готово' : k === o.st ? 'сейчас' : ''}</span></li>`).join('');
+  return `<h2>Статус заказа</h2>
+  <div class="ticket"><div class="mute">Квитанция</div><div class="no">№${o.id}</div>
+    <div class="perf"></div>
+    <div class="row"><span class="grow">${o.items}</span><span class="num">${rub(o.sum)}</span></div>
+    <div class="mute" style="font-size:14px;margin-top:4px">${o.when}</div></div>
+  <ul class="tl">${tl}</ul>
+  ${o.st < STAGES.length - 1 ? (inTg ? `<p class="mute">Когда статус изменится, бот пришлёт сообщение в чат.</p>` : `<button class="btn ghost" id="next">Демо: следующий этап</button>`) : `<div class="card"><b>Спасибо!</b> Начислено ${Math.round(o.sum * .05)} бонусов.</div>`}
+  <h3>Прошлые заказы</h3>
+  ${S.history.map(h => `<div class="item"><div><b>№${h.id}</b> · ${h.items}<br><span class="mute">${h.date}</span></div><div class="num">${rub(h.sum)}</div></div>`).join('')}`;
+}
+
+function qr() {
+  let s = 2417, cells = '';
+  const N = 21, fin = (x, y) => [[0,0],[14,0],[0,14]].some(([a, b]) => x >= a && x < a + 7 && y >= b && y < b + 7);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (fin(x, y)) continue;
+    s = s * 16807 % 2147483647;
+    if (s % 2) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  const f = (a, b) => `<rect x="${a + .5}" y="${b + .5}" width="6" height="6" fill="none" stroke="#11153a"/><rect x="${a + 2}" y="${b + 2}" width="3" height="3"/>`;
+  return `<svg viewBox="0 0 21 21" fill="#11153a" aria-label="Код карты">${cells}${f(0,0)}${f(14,0)}${f(0,14)}</svg>`;
+}
+
+function bonus() {
+  const goal = 25000, pct = Math.min(100, S.spent / goal * 100);
+  return `<h2>Бонусная карта</h2>
+  <div class="loy"><div><div style="opacity:.8;font-size:14px">Баланс</div><div class="big">${S.bonus}</div><div style="opacity:.8;font-size:14px;margin-top:6px">Уровень «Серебро» · кешбэк 5%</div></div>${qr()}</div>
+  <p class="mute" style="text-align:center">Покажите код на кассе, чтобы списать бонусы</p>
+  <div class="card"><div class="row"><b class="grow">До «Золота» и кешбэка 10%</b><span class="num">${rub(goal - S.spent)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>
+  <h3>Пригласите друга</h3>
+  <div class="card"><p style="margin:0 0 10px">Другу скидка 20% на первый заказ, вам 300 бонусов.</p>
+  <div class="row"><input class="field grow" id="ref" value="t.me/suho_bot?start=ref2417" readonly aria-label="Ссылка"><button class="btn" style="width:auto" id="copy">Копировать</button></div></div>`;
+}
+
+function owner() {
+  const rev = S.orders.reduce((a, o) => a + o.sum, 0);
+  const work = S.orders.filter(o => o.st < 5).length;
+  const wk = [9,12,8,14,11,17,S.orders.length + 6], mx = Math.max(...wk);
+  const dn = ['пн','вт','ср','чт','пт','сб','вс'];
+  return `<h2>Панель владельца</h2>
+  <div class="stats"><div><b>${S.orders.length}</b><span>заказов сегодня</span></div><div><b>${(rev / 1000).toFixed(1).replace('.', ',')}к</b><span>выручка, ₽</span></div><div><b>${work}</b><span>в работе</span></div></div>
+  <h3>Заказы за неделю</h3>
+  <div class="wk">${wk.map((v, k) => `<div class="${k === 6 ? 'today' : ''}"><span>${v}</span><i style="height:${v / mx * 70}px"></i><span>${dn[k]}</span></div>`).join('')}</div>
+  <h3>Входящие</h3>
+  ${S.orders.slice().reverse().map(o => `<div class="ord"><div class="row"><b class="grow">№${o.id} · ${o.who}</b><span class="pill ${o.st === 0 ? 'hot' : o.st >= 3 ? 'ok' : ''}">${STAGES[o.st]}</span></div>
+    <div class="row"><span class="grow mute">${o.items}</span><span class="num">${rub(o.sum)}</span></div>
+    ${o.st < 5 ? `<button class="btn ghost" data-adv="${o.id}">Отметить: ${STAGES[o.st + 1]}</button>` : ''}</div>`).join('')}
+  <p class="note">Каждое нажатие отправляет клиенту сообщение в Telegram</p>`;
+}
+
+const VIEWS = {home, order, status, bonus, owner};
+function render() {
+  let v = location.hash.slice(1);
+  if (!VIEWS[v] || (inTg && v === 'owner')) v = 'home';
+  S.owner = v === 'owner';
+  $('view').innerHTML = VIEWS[v]();
+  $('tabs').hidden = S.owner;
+  $('mClient').setAttribute('aria-pressed', !S.owner);
+  $('mOwner').setAttribute('aria-pressed', S.owner);
+  document.querySelectorAll('#tabs button').forEach(b => { if (b.dataset.v === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  const n = count(); $('cnt').hidden = !n; $('cnt').textContent = n;
+}
+function rerender() { const sc = $('view').scrollTop; render(); $('view').scrollTop = sc; }
+function go(v) { if (location.hash === '#' + v) { render(); } else { location.hash = v; } $('view').scrollTop = 0; }
+
+$('tabs').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) go(b.dataset.v); });
+$('mClient').addEventListener('click', () => go('home'));
+$('mOwner').addEventListener('click', () => go('owner'));
+$('view').addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  const d = t.dataset;
+  if (d.go) return go(d.go);
+  if (d.inc) { S.cart[d.inc] = (S.cart[d.inc] || 0) + 1; haptic(); return rerender(); }
+  if (d.dec) { S.cart[d.dec] = Math.max(0, (S.cart[d.dec] || 0) - 1); if (!S.cart[d.dec]) delete S.cart[d.dec]; return rerender(); }
+  if (d.cat) { S.cat = d.cat; return rerender(); }
+  if (d.mode) { S.mode = d.mode; return rerender(); }
+  if (d.day) { S.day = +d.day; return rerender(); }
+  if (d.slot) { S.slot = d.slot; return rerender(); }
+  if (d.adv) {
+    const o = S.orders.find(x => x.id === +d.adv); o.st++;
+    if (o.id === S.my && o.st === 5) S.bonus += Math.round(o.sum * .05);
+    toast(`Клиенту отправлено: «Заказ №${o.id}: ${STAGES[o.st].toLowerCase()}»`); haptic(); return rerender();
+  }
+  if (t.id === 'next') {
+    const o = S.orders.find(x => x.id === S.my); o.st++;
+    if (o.st === 5) S.bonus += Math.round(o.sum * .05);
+    toast(`Новое сообщение от Сухо: ${STAGES[o.st]}`); haptic(); return rerender();
+  }
+  if (t.id === 'copy') { const r = $('ref'); r.select(); try { navigator.clipboard.writeText(r.value).then(() => toast('Ссылка скопирована'), () => toast('Выделено, скопируйте вручную')); } catch (er) { toast('Выделено, скопируйте вручную'); } return; }
+  if (t.id === 'submit') {
+    const c = calc();
+    if (!c.sub) return toast('Добавьте хотя бы одну вещь');
+    if (S.mode === 'courier' && S.addr.trim().length < 6) return toast('Укажите адрес для курьера');
+    if (inTg) {
+      const d = days[S.day], pad = n => String(n).padStart(2, '0');
+      const payload = {cart:S.cart, urgent:S.urgent, stain:S.stain, mode:S.mode,
+        day:`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+        slot:SLOTS.indexOf(S.slot), addr:S.addr, bonus:S.useBonus};
+      try { tg.HapticFeedback.notificationOccurred('success'); } catch (er) {}
+      tg.sendData(JSON.stringify(payload));
+      return;
+    }
+    const id = Math.max(...S.orders.map(o => o.id)) + 1;
+    const items = cartList().map(i => i.n + (S.cart[i.id] > 1 ? ' ×' + S.cart[i.id] : '')).join(', ');
+    const when = S.mode === 'courier' ? `Курьер: ${dayLabel(days[S.day])}, ${S.slot}` : 'Сдача в пункте на пр. Мира';
+    S.orders.push({id, who:'Вы', items, sum:c.total, st:0, when});
+    S.bonus -= c.use; S.spent += c.total; S.my = id; S.cart = {}; S.useBonus = false; S.urgent = false; S.stain = false;
+    try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred('success'); } catch (er) {}
+    go('status'); toast(`Заказ №${id} оформлен. ${when}`);
+  }
+});
+$('view').addEventListener('change', e => {
+  const id = e.target.id;
+  if (id === 'urg') S.urgent = e.target.checked;
+  if (id === 'stn') S.stain = e.target.checked;
+  if (id === 'ub') S.useBonus = e.target.checked;
+  if (id === 'addr') { S.addr = e.target.value; return; }
+  rerender();
+});
+$('view').addEventListener('input', e => { if (e.target.id === 'addr') S.addr = e.target.value; });
+window.addEventListener('hashchange', render);
+if (P) {
+  S.bonus = P.b | 0; S.spent = P.sp | 0; S.addr = P.a || '';
+  const os = (P.o || []).map(o => ({id:o.id, who:'Вы', items:o.s, sum:o.t, st:o.st, when:o.w}));
+  S.orders = os.filter(o => o.st >= 0 && o.st < 5);
+  S.history = os.filter(o => o.st === 5).map(o => ({id:o.id, items:o.items, sum:o.sum, date:'выдан'}));
+  S.my = S.orders.length ? S.orders[0].id : null;
+} else {
+  S.orders[2].when = 'Курьер забрал вчера, 14:20';
+}
+if (inTg) document.querySelector('.seg').hidden = true;
+render();
+}
+</script>
+</body>
+</html>
